@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@utility header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem var(--spacing-container-padding);
+    max-width: var(--spacing-container-max);
+    margin-left: auto;
+    margin-right: auto;
+    position: absolute;
+    top: 0;
+    background-color: transparent;
+    z-index: 10;
+    right: 0;
+    left: 0;
+    
+    @media (min-width: 640px) {
+      padding-left: var(--spacing-container-padding-sm);
+      padding-right: var(--spacing-container-padding-sm);
+    }
+  }
+
+  body {
+    padding-top: 20px; /* Adjust based on your header height */
+  }
+  
+/* Remove the old header utility and add this */
+@utility sidebar-layout {
+  margin-left: 16rem; /* 256px - matches w-64 */
+}
+
+/* Or add this to your body/main content wrapper */
+body {
+  margin-left: 16rem;
+}
+
+/* For responsive design */
+@media (max-width: 768px) {
+  body {
+    margin-left: 0;
+  }
+  
+  /* You might want to hide the sidebar on mobile or make it collapsible */
+}
