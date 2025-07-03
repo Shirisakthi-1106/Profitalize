@@ -1,0 +1,42 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# production
+/build
+/dist
+
+# misc
+.DS_Store
+.env
+.env.local
+.env.*.local
+*.log
+yarn-debug.log*
+npm-debug.log*
+
+# IDEs & editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# testing
+coverage/
+*.lcov
+
+# optional lock files
+package-lock.json
+yarn.lock
+
+# system
+Thumbs.db
+Desktop.ini
+
+# custom files
+colors.txt
+whatsapp.jpeg
+
