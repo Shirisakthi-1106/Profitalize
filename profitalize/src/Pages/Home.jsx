@@ -12,7 +12,6 @@ import {
   Line,
 } from 'recharts';
 
-// === Revenue Data ===
 const revenueData = [
   { category: 'Beauty', revenue: 42000 },
   { category: 'Home', revenue: 68000 },
