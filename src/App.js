@@ -1,3 +1,4 @@
+import ProfitSimulator from './ProfitSimulator';
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart, Target } from 'lucide-react';
@@ -39,7 +40,7 @@ const Profitalyze = () => {
       { period: 'Mar', customers: 195 },
       { period: 'Apr', customers: 280 },
       { period: 'May', customers: 245 },
-      { period: 'Jun', customers: 310 }
+      { period: 'Jun', customers: 200 }
     ],
     yearly: [
       { period: '2021', customers: 1800 },
@@ -171,6 +172,9 @@ const Profitalyze = () => {
       );
     }
 
+    if (currentPage === 'insights') {
+    return <ProfitSimulator />;
+  }
     return (
       <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">{currentPage.charAt(0).toUpperCase() + currentPage.slice(1)}</h2>
