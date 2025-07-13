@@ -7,6 +7,15 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+.env
+.env.*.local
+
+.env
+server/.env.development.local
+server/.env.production.local
+prisma/migrations/
+prisma/src/generated/prisma/
+
 node_modules
 dist
 dist-ssr
@@ -22,3 +31,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+/src/generated/prisma
