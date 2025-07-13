@@ -1,1 +1,1 @@
-# Profitalize
+# Profitalyze
