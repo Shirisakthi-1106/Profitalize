@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ import
+import { useNavigate } from 'react-router-dom';
 
 const revenueData = [
   { category: 'Beauty', revenue: 42000 },
@@ -28,7 +28,7 @@ const revenueData = [
 ];
 
 const Products = () => {
-  const navigate = useNavigate(); // ✅ hook
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen px-8 py-10">

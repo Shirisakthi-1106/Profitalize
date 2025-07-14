@@ -1,26 +1,21 @@
-import React from 'react'
-import {Route, BrowserRouter as Router, Routes} from 'react-router-dom';
-import Navbar from './Components/Navbar';
 
 
-import {Home, Profits, Products,ProductDisplay} from './Pages';
-
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Profitalyze from './Profitalyze';
+import ProductDisplay from './Pages/ProductsDisplay';
 
 const App = () => {
   return (
-    <main>
-      <Router>
-        <Navbar/>
-        <Routes>
-          <Route path='/' element={<Home/>}/>
-          <Route path='/profits' element={<Profits/>}/>
-          <Route path='/products' element={<Products/>}/>
-          <Route path="/products/:category" element={<ProductDisplay />} />
+    <Router>
+      <Routes>
+        <Route path="/" element={<Profitalyze />} />
+        <Route path="/products/:category" element={<ProductDisplay />} />
+      </Routes>
+    </Router>
+  );
 
-        </Routes>
-      </Router>
-    </main>
-  )
 }
 
-export default App
+
+export default App;
