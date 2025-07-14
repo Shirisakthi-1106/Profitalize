@@ -1,526 +1,224 @@
-//inge keezhe
-// export default WalmartRetailSimulator;
-import RightPanel from './RightPanel';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import ProfitSimulator from './ProfitSimulator';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { TrendingUp, DollarSign, Users, ShoppingCart, Target } from 'lucide-react';
+import Products from './pages/Products';
+import CustomerAnalyticsDashboard from './Pages/Analytics';
+import CRMDashboard from './Pages/Reports';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ShoppingBag, Smartphone, Laptop, Car, Home, Utensils, Book, Gamepad2, Dumbbell, Plane, Music, Brush, Baby, Flower, Wrench, X, Lightbulb, Plus } from 'lucide-react';
+const Profitalyze = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Determine current page based on URL
+  const getCurrentPage = () => {
+    if (location.pathname === '/products') return 'products';
+    if (location.pathname === '/') return 'home';
+    return 'home';
+  };
 
-const DragDropSimulator = () => {
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [stageBlocks, setStageBlocks] = useState([]);
-  const [connections, setConnections] = useState([]);
-  const [draggedBlock, setDraggedBlock] = useState(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
-  const [hoveredBlock, setHoveredBlock] = useState(null);
-  const [snapCandidate, setSnapCandidate] = useState(null);
-  const stageRef = useRef(null);
+  const currentPage = getCurrentPage();
+  const [customerPeriod, setCustomerPeriod] = useState('monthly');
 
-  // Categories with icons and products
-  const categories = [
-    { id: 'fashion', name: 'Fashion', icon: ShoppingBag, products: ['Levi Jeans', 'Nike Shoes', 'Adidas Hoodie', 'Ray-Ban Sunglasses', 'Gucci Belt'] },
-    { id: 'electronics', name: 'Electronics', icon: Smartphone, products: ['iPhone 15', 'Samsung Galaxy', 'AirPods Pro', 'iPad Air', 'MacBook Pro'] },
-    { id: 'computers', name: 'Computers', icon: Laptop, products: ['Gaming PC', 'Dell Laptop', 'Mechanical Keyboard', 'Wireless Mouse', 'Monitor 4K'] },
-    { id: 'automotive', name: 'Automotive', icon: Car, products: ['Car Tires', 'Motor Oil', 'GPS Navigator', 'Dash Cam', 'Car Charger'] },
-    { id: 'home', name: 'Home & Garden', icon: Home, products: ['Smart Thermostat', 'Robot Vacuum', 'LED Bulbs', 'Garden Tools', 'Throw Pillows'] },
-    { id: 'food', name: 'Food & Beverage', icon: Utensils, products: ['Protein Powder', 'Organic Tea', 'Gourmet Coffee', 'Energy Bars', 'Vitamins'] },
-    { id: 'books', name: 'Books & Media', icon: Book, products: ['Business Books', 'Kindle Unlimited', 'Audiobooks', 'Notebooks', 'Magazines'] },
-    { id: 'gaming', name: 'Gaming', icon: Gamepad2, products: ['PS5 Console', 'Xbox Controller', 'Gaming Headset', 'VR Headset', 'Steam Deck'] },
-    { id: 'fitness', name: 'Fitness', icon: Dumbbell, products: ['Yoga Mat', 'Dumbbells', 'Protein Shakes', 'Fitness Tracker', 'Resistance Bands'] },
-    { id: 'travel', name: 'Travel', icon: Plane, products: ['Luggage Set', 'Travel Pillow', 'Passport Holder', 'Travel Adapter', 'Packing Cubes'] },
-    { id: 'music', name: 'Music', icon: Music, products: ['Bluetooth Speaker', 'Vinyl Records', 'Guitar Picks', 'Music Streaming', 'Headphones'] },
-    { id: 'art', name: 'Art & Crafts', icon: Brush, products: ['Art Supplies', 'Painting Canvas', 'Colored Pencils', 'Craft Kit', 'Sketchbook'] },
-    { id: 'baby', name: 'Baby & Kids', icon: Baby, products: ['Baby Stroller', 'Diapers', 'Baby Formula', 'Toys', 'Kids Clothes'] },
-    { id: 'beauty', name: 'Beauty', icon: Flower, products: ['Skincare Set', 'Makeup Kit', 'Perfume', 'Hair Care', 'Nail Polish'] },
-    { id: 'tools', name: 'Tools', icon: Wrench, products: ['Drill Set', 'Hammer', 'Screwdriver Kit', 'Toolbox', 'Measuring Tape'] }
+  const [stats, setStats] = useState({
+    totalRevenue: 125680,
+    totalProfit: 45230,
+    customerCount: 1250,
+    avgOrderValue: 89.5,
+    conversionRate: 3.2,
+  });
+
+  const salesData = [
+    { month: 'Jan', sales: 12500, profit: 4200 },
+    { month: 'Feb', sales: 15800, profit: 5300 },
+    { month: 'Mar', sales: 18200, profit: 6100 },
+    { month: 'Apr', sales: 22100, profit: 7400 },
+    { month: 'May', sales: 19500, profit: 6500 },
+    { month: 'Jun', sales: 25600, profit: 8600 },
   ];
 
-  // Deal blocks
-  const deals = [
-    { id: 'bogo', name: 'Buy 1 Get 1', color: 'bg-green-500', boost: 1.5 },
-    { id: 'discount', name: '20% Off', color: 'bg-red-500', boost: 1.2 },
-    { id: 'bundle', name: 'Bundle & Save', color: 'bg-blue-500', boost: 1.8 },
-    { id: 'shipping', name: 'Free Shipping', color: 'bg-purple-500', boost: 1.1 },
-    { id: 'flash', name: 'Flash Discount', color: 'bg-yellow-500', boost: 1.3 }
-  ];
-
-  // Calculate distance between two points
-  const calculateDistance = (x1, y1, x2, y2) => {
-    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+  const customerData = {
+    weekly: [
+      { period: 'Week 1', customers: 45 },
+      { period: 'Week 2', customers: 52 },
+      { period: 'Week 3', customers: 48 },
+      { period: 'Week 4', customers: 61 },
+    ],
+    monthly: [
+      { period: 'Jan', customers: 180 },
+      { period: 'Feb', customers: 220 },
+      { period: 'Mar', customers: 195 },
+      { period: 'Apr', customers: 280 },
+      { period: 'May', customers: 245 },
+      { period: 'Jun', customers: 200 },
+    ],
+    yearly: [
+      { period: '2021', customers: 1800 },
+      { period: '2022', customers: 2400 },
+      { period: '2023', customers: 2800 },
+      { period: '2024', customers: 3200 },
+    ],
   };
 
-  // Find snap candidate
-  const findSnapCandidate = (x, y, draggedBlockType) => {
-    const snapDistance = 80;
-    let closest = null;
-    let minDistance = Infinity;
-
-    stageBlocks.forEach(block => {
-      if (block.type === draggedBlockType) return;
-      if (draggedBlockType === 'product' && block.type === 'deal') return;
-
-      const distance = calculateDistance(x, y, block.x, block.y);
-      if (distance < snapDistance && distance < minDistance) {
-        minDistance = distance;
-        closest = block;
-      }
-    });
-
-    return closest;
-  };
-
-  // Calculate profit data based on connections
-  const calculateProfitData = () => {
-    const baseProfit = 800;
-    const productBlocks = stageBlocks.filter(block => block.type === 'product');
-
-    if (productBlocks.length === 0) return [];
-
-    return productBlocks.map((product, index) => {
-      const productConnections = connections.filter(conn => conn.productId === product.id);
-      let boost = 1;
-
-      productConnections.forEach(conn => {
-        const connectedDeal = stageBlocks.find(b => b.id === conn.dealId);
-        if (connectedDeal) {
-          const dealInfo = deals.find(d => d.id === connectedDeal.originalId);
-          if (dealInfo) boost *= dealInfo.boost;
-        }
-      });
-
-      return {
-        name: product.name.length > 8 ? product.name.substring(0, 8) + '...' : product.name,
-        profit: Math.floor(baseProfit * boost + (Math.random() * 300 - 150)),
-        connections: productConnections.length,
-        boost: boost.toFixed(2)
-      };
-    });
-  };
-
-  // AI suggestions based on current setup
-  const generateAISuggestions = () => {
-    const suggestions = [];
-    const productBlocks = stageBlocks.filter(block => block.type === 'product');
-    const dealBlocks = stageBlocks.filter(block => block.type === 'deal');
-    const unconnectedProducts = productBlocks.filter(p =>
-      !connections.some(c => c.productId === p.id)
-    );
-
-    if (productBlocks.length === 0) {
-      suggestions.push("blah blah blah");
-      return suggestions;
-    }
-
-    if (dealBlocks.length === 0) {
-      suggestions.push("Add promotional deals to boost conversion rates and revenue!");
-    }
-
-    if (unconnectedProducts.length > 0) {
-      suggestions.push(`Connect deals to ${unconnectedProducts.length} unlinked product${unconnectedProducts.length > 1 ? 's' : ''} for better performance`);
-    }
-
-    if (connections.length > 0) {
-      const avgConnections = connections.length / productBlocks.length;
-      if (avgConnections < 1.5) {
-        suggestions.push("Try stacking multiple deals on high-value products to maximize profit");
-      }
-    }
-
-    if (productBlocks.length > 2 && dealBlocks.length > 0) {
-      const hasBundleDeal = dealBlocks.some(deal => deal.originalId === 'bundle');
-      if (!hasBundleDeal) {
-        suggestions.push("Add 'Bundle & Save' deal for cross-selling opportunities");
-      }
-    }
-
-    if (connections.length > 3) {
-      suggestions.push("Great job! Your sales flow is optimized. Monitor the profit graph for performance.");
-    }
-
-    return suggestions.slice(0, 3);
-  };
-
-  // Handle drag start
-  const handleDragStart = (e, block) => {
-    setDraggedBlock(block);
-    const rect = e.currentTarget.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
-  };
-
-  // Handle drag over
-  const handleDragOver = (e) => {
-    e.preventDefault();
-
-    if (draggedBlock && stageRef.current) {
-      const stageRect = stageRef.current.getBoundingClientRect();
-      const x = e.clientX - stageRect.left - dragOffset.x;
-      const y = e.clientY - stageRect.top - dragOffset.y;
-
-      setDragPosition({ x, y });
-
-      const candidate = findSnapCandidate(x, y, draggedBlock.type);
-      setSnapCandidate(candidate);
+  // Update navigation to use React Router
+  const handleNavigation = (page) => {
+    if (page === 'products') {
+      navigate('/products');
+    } else if (page === 'home') {
+      navigate('/');
+    } else {
+      // For other pages that don't have routes yet, you can either:
+      // 1. Create routes for them, or
+      // 2. Use a query parameter approach
+      navigate(`/?page=${page}`);
     }
   };
 
-  // Handle drop
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (!draggedBlock || !stageRef.current) return;
-
-    const stageRect = stageRef.current.getBoundingClientRect();
-    let x = e.clientX - stageRect.left - dragOffset.x;
-    let y = e.clientY - stageRect.top - dragOffset.y;
-
-    if (snapCandidate) {
-      if (draggedBlock.type === 'deal') {
-        const connectedDeals = connections.filter(conn => conn.productId === snapCandidate.id);
-        const dealOffset = connectedDeals.length * 70;
-        x = snapCandidate.x;
-        y = snapCandidate.y + 70 + dealOffset;
-      }
-    }
-
-    const newBlock = {
-      ...draggedBlock,
-      id: `${draggedBlock.id}-${Date.now()}`,
-      x: Math.max(0, Math.min(x, 600)),
-      y: Math.max(0, Math.min(y, 1400)),
-      originalId: draggedBlock.id
-    };
-
-    setStageBlocks(prev => [...prev, newBlock]);
-
-    if (snapCandidate && draggedBlock.type === 'deal') {
-      setConnections(prev => [...prev, {
-        productId: snapCandidate.id,
-        dealId: newBlock.id
-      }]);
-    }
-
-    setDraggedBlock(null);
-    setSnapCandidate(null);
-  };
-
-  // Remove block from stage
-  const removeBlock = (blockId) => {
-    setStageBlocks(prev => prev.filter(block => block.id !== blockId));
-    setConnections(prev => prev.filter(conn =>
-      conn.productId !== blockId && conn.dealId !== blockId
-    ));
-  };
-
-  // Toggle connection between product and deal
-  const toggleConnection = (productId, dealId) => {
-    setConnections(prev => {
-      const exists = prev.some(conn =>
-        conn.productId === productId && conn.dealId === dealId
-      );
-
-      if (exists) {
-        return prev.filter(conn =>
-          !(conn.productId === productId && conn.dealId === dealId)
-        );
-      } else {
-        const product = stageBlocks.find(b => b.id === productId);
-        const deal = stageBlocks.find(b => b.id === dealId);
-
-        if (product && deal) {
-          const connectedDeals = prev.filter(conn => conn.productId === productId);
-          const dealOffset = connectedDeals.length * 70;
-
-          setStageBlocks(prevBlocks =>
-            prevBlocks.map(block =>
-              block.id === dealId
-                ? { ...block, x: product.x, y: product.y + 70 + dealOffset }
-                : block
-            )
-          );
-        }
-
-        return [...prev, { productId, dealId }];
-      }
-    });
-  };
-
-  // Render connection lines
-  const renderConnections = () => {
-    return connections.map((conn, index) => {
-      const product = stageBlocks.find(b => b.id === conn.productId);
-      const deal = stageBlocks.find(b => b.id === conn.dealId);
-
-      if (!product || !deal) return null;
-
-      const startX = product.x + 64;
-      const startY = product.y + 64;
-      const endX = deal.x + 64;
-      const endY = deal.y;
-
-      return (
-        <svg
-          key={index}
-          className="absolute pointer-events-none"
-          style={{ left: 0, top: 0, width: '100%', height: '100%' }}
-        >
-          <line
-            x1={startX}
-            y1={startY}
-            x2={endX}
-            y2={endY}
-            stroke="#3B82F6"
-            strokeWidth="2"
-            strokeDasharray="5,5"
-          />
-          <circle
-            cx={startX}
-            cy={startY}
-            r="3"
-            fill="#3B82F6"
-          />
-          <circle
-            cx={endX}
-            cy={endY}
-            r="3"
-            fill="#3B82F6"
-          />
-        </svg>
-      );
-    });
-  };
-
-  const profitData = calculateProfitData();
-  const aiSuggestions = generateAISuggestions();
-
-  return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* Left Panel - Categories */}
-      <div className="w-1/10 border-r-2 p-4 overflow-y-auto" style={{ backgroundColor: '#070807' }}>
-        {/* <h2 className="text-xl font-bold mb-4" style={{ color: '#f0f6ec' }}>Categories</h2> */}
-
-        <div className="space-y-3">
-          {categories.map((category) => {
-            const IconComponent = category.icon;
-            const isSelected = selectedCategory === category.id;
-
-            return (
-              <div
-                key={category.id}
-                className={`w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200`}
-                onClick={() => setSelectedCategory(isSelected ? null : category.id)}
-                title={category.name}
-                style={{
-                  backgroundColor: isSelected ? '#dff24f' : '#070807',
-                  color: isSelected ? '#070807' : '#ffffff',
-                  boxShadow: isSelected ? '0 0 10px #5fc3ab' : 'none',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#dff24f';
-                  e.currentTarget.style.color = '#070807';
-                  e.currentTarget.style.boxShadow = '0 0 10px #dff24f';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = isSelected ? '#dff24f' : '#070807';
-                  e.currentTarget.style.color = isSelected ? '#070807' : '#ffffff';
-                  e.currentTarget.style.boxShadow = isSelected ? '0 0 10px #5fc3ab' : 'none';
-                }}
-              >
-                <IconComponent size={20} />
-              </div>
-            );
-          })}
+  const StatCard = ({ title, value, change, icon: Icon }) => (
+    <div className="flex flex-col rounded-lg overflow-hidden shadow-md">
+      <div className="bg-black text-white p-4 border border-gray-700 flex items-center gap-3">
+        <Icon className="w-6 h-6 text-white" />
+        <div>
+          <p className="text-lg font-semibold">{value}</p>
+          <p className="text-sm text-gray-400">{title}</p>
         </div>
       </div>
+      {change !== undefined && (
+        <div className="bg-[#dff24f] px-3 py-2 flex justify-center">
+          <div className="bg-[#5fc3ab] text-black text-sm font-medium px-3 py-1 rounded-full shadow-sm">
+            {change >= 0 ? '+' : ''}
+            {change}% from last month
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
+  const renderContent = () => {
+    // Handle query parameter pages for non-routed pages
+    const urlParams = new URLSearchParams(location.search);
+    const queryPage = urlParams.get('page');
+    const effectivePage = currentPage !== 'home' ? currentPage : queryPage || 'home';
 
-      {/* Products & Deals Panel */}
-      <div className="w-1/6 border-r-2 p-4 overflow-y-auto" style={{ backgroundColor: '#dff24f' }}>
-        {/* Product Blocks */}
-        {selectedCategory && (
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3" style={{ color: '#070807' }}>
-              {categories.find(c => c.id === selectedCategory)?.name}
-            </h3>
-            <div className="space-y-2">
-              {categories.find(c => c.id === selectedCategory)?.products.map((product, index) => (
-                <div
-                  key={`${selectedCategory}-${index}`}
-                  className="rounded-lg p-2 cursor-move transition-colors"
-                  style={{
-                    backgroundColor: '#070807',
-                    color: '#ffffff',
-                    border: '2px solid #070807'
-                  }}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, {
-                    id: `${selectedCategory}-${index}`,
-                    name: product,
-                    type: 'product',
-                    category: selectedCategory
-                  })}
+    if (effectivePage === 'home') {
+      return (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <StatCard title="Total Revenue" value={`$${stats.totalRevenue.toLocaleString()}`} icon={DollarSign} />
+            <StatCard title="Total Profit" value={`$${stats.totalProfit.toLocaleString()}`} change={8.2} icon={Target} />
+            <StatCard title="Customers" value={stats.customerCount.toLocaleString()} change={15.3} icon={Users} />
+            <StatCard title="Avg Order Value" value={`$${stats.avgOrderValue.toFixed(2)}`} change={-2.1} icon={ShoppingCart} />
+            <StatCard title="Conversion Rate" value={`${stats.conversionRate}%`} change={5.7} icon={TrendingUp} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-[#dff24f] rounded-lg shadow-md p-6 border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Sales Over Time</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={salesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip cursor={{ fill: '#d1ece3' }} />
+                  <Legend />
+                  <Bar dataKey="sales" fill="#000000" name="Sales" />
+                  <Bar dataKey="profit" fill="#10B981" name="Profit" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Customer Count</h3>
+                <select
+                  value={customerPeriod}
+                  onChange={(e) => setCustomerPeriod(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-black"
                 >
-                  <div className="text-xs font-medium">{product}</div>
-                </div>
-              ))}
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={customerData[customerPeriod]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="period" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [value.toLocaleString(), 'Customers']} />
+                  <Line type="monotone" dataKey="customers" stroke="#5fc3ab" strokeWidth={3} dot={{ fill: '#5fc3ab', strokeWidth: 2, r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
-        )}
-
-        {/* Deal Blocks */}
-        <div>
-          <h3 className="text-lg font-semibold mb-3" style={{ color: '#070807' }}>Deals</h3>
-          <div className="space-y-2">
-            {deals.map((deal) => (
-              <div
-                key={deal.id}
-                className="rounded-lg p-2 cursor-move hover:opacity-90 transition-opacity"
-                style={{
-                  backgroundColor: '#5fc3ab',
-                  color: '#070807'
-                }}
-                draggable
-                onDragStart={(e) => handleDragStart(e, {
-                  id: deal.id,
-                  name: deal.name,
-                  type: 'deal',
-                  color: deal.color,
-                  originalId: deal.id
-                })}
-              >
-                <div className="text-xs font-medium">{deal.name}</div>
-              </div>
-            ))}
-          </div>
         </div>
+      );
+    }
+
+    if (effectivePage === 'insights') return <ProfitSimulator />;
+    if (effectivePage === 'products') return <Products />;
+
+    if (effectivePage === 'analytics') return <CustomerAnalyticsDashboard/>;
+    if (effectivePage === 'reports') return <CRMDashboard/>;
+
+    return (
+      <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{effectivePage.charAt(0).toUpperCase() + effectivePage.slice(1)}</h2>
+        <p className="text-gray-600">Content for {effectivePage} page will be implemented here.</p>
       </div>
+    );
+  };
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStats((prev) => ({
+        ...prev,
+        totalRevenue: prev.totalRevenue + Math.floor(Math.random() * 100),
+        customerCount: prev.customerCount + Math.floor(Math.random() * 5),
+      }));
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
-      {/* Center Panel - Enhanced Stage */}
-      <div className="w-3/5 p-4 overflow-hidden">
-        <h2 className="text-2xl font-bold mb-4" style={{ color: '#070807' }}>building area</h2>
-        <div className="h-full overflow-y-auto">
-          <div
-            ref={stageRef}
-            className="rounded-lg border-2 border-dashed min-h-[1500px] p-4 relative"
-            style={{ backgroundColor: '#f0f6ec', borderColor: '#cbd5e1' }}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          >
-            {stageBlocks.length === 0 && (
-              <div className="text-center mt-20" style={{ color: '#6b7280' }}>
-                <p className="text-lg">try dropping a product</p>
-              </div>
-            )}
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <nav className="sticky top-0 z-50 bg-black shadow-sm border-b border-black">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-white">Profitalyze</h1>
+            </div>
+            <div className="hidden md:flex md:space-x-8 items-center">
+              {['home', 'products', 'insights', 'analytics', 'reports'].map((page) => {
+                // Determine if this page is active
+                const urlParams = new URLSearchParams(location.search);
+                const queryPage = urlParams.get('page');
+                const effectivePage = currentPage !== 'home' ? currentPage : queryPage || 'home';
+                const isActive = effectivePage === page;
 
-            {renderConnections()}
-
-            {stageBlocks.map((block) => {
-              const isConnected = connections.some(conn =>
-                conn.productId === block.id || conn.dealId === block.id
-              );
-              const isHovered = hoveredBlock === block.id;
-              const isSnapTarget = snapCandidate?.id === block.id;
-
-              return (
-                <div
-                  key={block.id}
-                  className={`absolute w-32 h-16 p-2 rounded-lg border-2 transition-all cursor-pointer ${block.type === 'product'
-                      ? `bg-[#ffffff] text-black border-[#070807] ${isConnected ? 'ring-2 ring-[#070807]' : ''
-                      } ${isSnapTarget ? 'ring-4 ring-green-400 shadow-lg' : ''}`
-                      : `bg-[#a3e0d3] text-black border-[#5fc3ab] ${isConnected ? 'ring-2 ring-[#5fc3ab]' : ''
-                      }`
-                    } ${isHovered ? 'scale-105' : ''}`}
-                  style={{
-                    left: `${block.x}px`,
-                    top: `${block.y}px`,
-                    zIndex: isSnapTarget ? 50 : (isHovered ? 20 : 10),
-                  }}
-                  onMouseEnter={() => setHoveredBlock(block.id)}
-                  onMouseLeave={() => setHoveredBlock(null)}
-                  onClick={() => {
-                    if (block.type === 'product') {
-                      const dealBlocks = stageBlocks.filter(b => b.type === 'deal');
-                      const unconnectedDeals = dealBlocks.filter(deal =>
-                        !connections.some(conn =>
-                          conn.productId === block.id && conn.dealId === deal.id
-                        )
-                      );
-
-                      if (unconnectedDeals.length > 0) {
-                        const closest = unconnectedDeals.reduce((closest, deal) => {
-                          const currentDistance = calculateDistance(block.x, block.y, deal.x, deal.y);
-                          const closestDistance = calculateDistance(block.x, block.y, closest.x, closest.y);
-                          return currentDistance < closestDistance ? deal : closest;
-                        });
-
-                        if (calculateDistance(block.x, block.y, closest.x, closest.y) < 300) {
-                          toggleConnection(block.id, closest.id);
-                        }
-                      }
-                    }
-                  }}
-                >
+                return (
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeBlock(block.id);
-                    }}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors z-10"
+                    key={page}
+                    onClick={() => handleNavigation(page)}
+                    className={`w-24 text-center px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                      isActive ? 'text-black bg-[#dff24f]' : 'text-white hover:text-black hover:bg-[#dff24f]'
+                    }`}
                   >
-                    <X size={10} />
+                    {page.charAt(0).toUpperCase() + page.slice(1)}
                   </button>
-
-                  <div className="text-xs font-medium">{block.name}</div>
-                  <div className="text-xs opacity-80">{block.type === 'product' ? 'Product' : 'Deal'}</div>
-
-                  {isConnected && (
-                    <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                  )}
-
-                  {block.type === 'product' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const nearbyDeals = stageBlocks.filter(b =>
-                          b.type === 'deal' && calculateDistance(block.x, block.y, b.x, b.y) < 300
-                        );
-                        const unconnectedDeals = nearbyDeals.filter(deal =>
-                          !connections.some(conn =>
-                            conn.productId === block.id && conn.dealId === deal.id
-                          )
-                        );
-
-                        if (unconnectedDeals.length > 0) {
-                          const closest = unconnectedDeals.reduce((closest, deal) => {
-                            const currentDistance = calculateDistance(block.x, block.y, deal.x, deal.y);
-                            const closestDistance = calculateDistance(block.x, block.y, closest.x, closest.y);
-                            return currentDistance < closestDistance ? deal : closest;
-                          });
-                          toggleConnection(block.id, closest.id);
-                        }
-                      }}
-                      className="absolute -bottom-1 -left-1 w-4 h-4 bg-[#dff24f] text-black rounded-full flex items-center justify-center hover:bg-[#4cb29d] transition-colors"
-                    >
-                      <Plus size={8} />
-                    </button>
-                  )}
-                </div>
-
-              );
-            })}
-
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
-                      <RightPanel
-  stageBlocks={stageBlocks}
-  connections={connections}
-  profitData={profitData}
-  aiSuggestions={aiSuggestions}
-/>
-    </div>);
-}
-export default DragDropSimulator;
+      </nav>
+
+      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {renderContent()}
+      </main>
+    </div>
+  );
+};
+
+export default Profitalyze;
