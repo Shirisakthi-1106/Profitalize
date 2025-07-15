@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URI")
+}
+
+model Products {
+  product_id              Int             @id @default(autoincrement())
+  product_name            String          @db.VarChar(100)
+  sku                     String?         @db.VarChar(50)
+  brand                   String?         @db.VarChar(50)
+  description             String?
+  final_price             Decimal         @db.Decimal(10, 2)
+  initial_price           Decimal?        @db.Decimal(10, 2)
+  unit_price              Decimal?        @db.Decimal(10, 2)
+  currency                String?         @db.VarChar(3)
+  stock_quantity          Int
+  main_image              String?         @db.VarChar(255)
+  image_urls              String?
+  specifications          String?
+  sizes                   String?
+  colors                  String?
+  ingredients             String?
+  unit                    String?         @db.VarChar(20)
+  category_id             Int?
+  rating_stars            Decimal?        @db.Decimal(3, 1)
+  review_count            Int?            @default(0)
+  free_returns            Boolean?        @default(false)
+  expiry_date             DateTime?
+  tags                    String?
+  upc                     String?         @db.VarChar(50)
+  shipping_cost           Decimal?        @db.Decimal(10, 2)
+  estimated_delivery_days Int?
+  created_date            DateTime?       @default(now())
+  updated_date            DateTime?       @updatedAt
+  category                Categories?     @relation(fields: [category_id], references: [category_id])
+  product_deals           Product_deals[]
+  deal_usage              Deal_Usage[]
+  cart_items              Add_to_Cart[]
+}
+
+model Categories {
+  category_id          Int          @id @default(autoincrement())
+  category_name        String       @db.VarChar(50)
+  category_path        String?      @db.VarChar(100)
+  parent_category_id   Int?
+  root_category_name   String?      @db.VarChar(50)
+  category_description String?
+  products             Products[]
+  deals                Deals[]
+  parent_category      Categories?  @relation("CategoryToParent", fields: [parent_category_id], references: [category_id])
+  child_categories     Categories[] @relation("CategoryToParent")
+}
+
+model Deals {
+  deal_id               Int             @id @default(autoincrement())
+  deal_name             String          @db.VarChar(100)
+  deal_type             String          @db.VarChar(20)
+  discount_value        Decimal         @db.Decimal(10, 2)
+  start_date            DateTime
+  end_date              DateTime
+  minimum_purchase      Decimal?        @db.Decimal(10, 2)
+  maximum_discount      Decimal?        @db.Decimal(10, 2)
+  deal_description      String?
+  is_active             Boolean         @default(true)
+  category_id           Int?
+  max_uses_per_customer Int?
+  created_date          DateTime?       @default(now())
+  category              Categories?     @relation(fields: [category_id], references: [category_id])
+  product_deals         Product_deals[]
+  deal_usage            Deal_Usage[]
+}
+
+model Product_deals {
+  product_deal_id Int       @id @default(autoincrement())
+  product_id      Int
+  deal_id         Int
+  created_date    DateTime? @default(now())
+  product         Products  @relation(fields: [product_id], references: [product_id])
+  deal            Deals     @relation(fields: [deal_id], references: [deal_id])
+}
+
+model Customers {
+  customer_id              Int                  @id @default(autoincrement())
+  first_name               String               @db.VarChar(50)
+  last_name                String               @db.VarChar(50)
+  phone                    String?              @db.VarChar(20)
+  email                    String               @unique @db.VarChar(100)
+  registration_date        DateTime?            @default(now())
+  total_visits             Int?                 @default(0)
+  loyalty_tier             String?              @db.VarChar(20)
+  last_login               DateTime?
+  preferred_payment_method String?
+  deal_usage               Deal_Usage[]
+  transactions             Transactions[]
+  shipping_addresses       Shipping_Addresses[]
+  cart_items               Add_to_Cart[]
+  payment_method           Payment_Methods?     @relation(fields: [preferred_payment_method], references: [payment_method])
+}
+
+model Deal_Usage {
+  usage_id         Int          @id @default(autoincrement())
+  customer_id      Int
+  deal_id          Int
+  product_id       Int
+  usage_date       DateTime
+  transaction_id   Int
+  discount_applied Decimal      @db.Decimal(10, 2)
+  savings_amount   Decimal      @db.Decimal(10, 2)
+  session_id       String?      @db.VarChar(50)
+  customer         Customers    @relation(fields: [customer_id], references: [customer_id])
+  deal             Deals        @relation(fields: [deal_id], references: [deal_id])
+  product          Products     @relation(fields: [product_id], references: [product_id])
+  transaction      Transactions @relation(fields: [transaction_id], references: [transaction_id])
+}
+
+model Transactions {
+  transaction_id      Int                 @id @default(autoincrement())
+  customer_id         Int?
+  transaction_date    DateTime
+  total_amount        Decimal             @db.Decimal(10, 2)
+  discount_total      Decimal?            @db.Decimal(10, 2)
+  payment_method      String              @db.VarChar(20)
+  shipping_address_id Int?
+  customer            Customers?          @relation(fields: [customer_id], references: [customer_id])
+  shipping_address    Shipping_Addresses? @relation(fields: [shipping_address_id], references: [shipping_address_id])
+  deal_usage          Deal_Usage[]
+}
+
+model Shipping_Addresses {
+  shipping_address_id Int            @id @default(autoincrement())
+  customer_id         Int
+  address_line1       String         @db.VarChar(100)
+  address_line2       String?        @db.VarChar(100)
+  city                String         @db.VarChar(50)
+  state               String?        @db.VarChar(50)
+  postal_code         String         @db.VarChar(20)
+  country             String         @db.VarChar(50)
+  created_date        DateTime?      @default(now())
+  customer            Customers      @relation(fields: [customer_id], references: [customer_id])
+  transactions        Transactions[]
+}
+
+model Payment_Methods {
+  payment_method String      @id @db.VarChar(50)
+  method_type    String      @db.VarChar(20)
+  is_active      Boolean     @default(true)
+  customers      Customers[]
+}
+
+model Add_to_Cart {
+  cart_id     Int       @id @default(autoincrement())
+  customer_id Int
+  product_id  Int
+  quantity    Int
+  added_date  DateTime  @default(now())
+  session_id  String?   @db.VarChar(50)
+  is_active   Boolean   @default(true)
+  customer    Customers @relation(fields: [customer_id], references: [customer_id])
+  product     Products  @relation(fields: [product_id], references: [product_id])
+}

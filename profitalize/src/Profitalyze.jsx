@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ProfitSimulator from './ProfitSimulator';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, DollarSign, Users, ShoppingCart, Target } from 'lucide-react';
-import Products from './Pages/Products';
+import Products from './pages/Products';
+import CustomerAnalyticsDashboard from './Pages/Analytics';
+import CRMDashboard from './Pages/Reports';
 
 const Profitalyze = () => {
-  const [currentPage, setCurrentPage] = useState('home');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Determine current page based on URL
+  const getCurrentPage = () => {
+    if (location.pathname === '/products') return 'products';
+    if (location.pathname === '/') return 'home';
+    return 'home';
+  };
+
+  const currentPage = getCurrentPage();
   const [customerPeriod, setCustomerPeriod] = useState('monthly');
 
   const [stats, setStats] = useState({
@@ -48,6 +61,20 @@ const Profitalyze = () => {
     ],
   };
 
+  // Update navigation to use React Router
+  const handleNavigation = (page) => {
+    if (page === 'products') {
+      navigate('/products');
+    } else if (page === 'home') {
+      navigate('/');
+    } else {
+      // For other pages that don't have routes yet, you can either:
+      // 1. Create routes for them, or
+      // 2. Use a query parameter approach
+      navigate(`/?page=${page}`);
+    }
+  };
+
   const StatCard = ({ title, value, change, icon: Icon }) => (
     <div className="flex flex-col rounded-lg overflow-hidden shadow-md">
       <div className="bg-black text-white p-4 border border-gray-700 flex items-center gap-3">
@@ -69,7 +96,12 @@ const Profitalyze = () => {
   );
 
   const renderContent = () => {
-    if (currentPage === 'home') {
+    // Handle query parameter pages for non-routed pages
+    const urlParams = new URLSearchParams(location.search);
+    const queryPage = urlParams.get('page');
+    const effectivePage = currentPage !== 'home' ? currentPage : queryPage || 'home';
+
+    if (effectivePage === 'home') {
       return (
         <div className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -124,13 +156,16 @@ const Profitalyze = () => {
       );
     }
 
-    if (currentPage === 'insights') return <ProfitSimulator />;
-    if (currentPage === 'products') return <Products />;
+    if (effectivePage === 'insights') return <ProfitSimulator />;
+    if (effectivePage === 'products') return <Products />;
+
+    if (effectivePage === 'analytics') return <CustomerAnalyticsDashboard/>;
+    if (effectivePage === 'reports') return <CRMDashboard/>;
 
     return (
       <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">{currentPage.charAt(0).toUpperCase() + currentPage.slice(1)}</h2>
-        <p className="text-gray-600">Content for {currentPage} page will be implemented here.</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{effectivePage.charAt(0).toUpperCase() + effectivePage.slice(1)}</h2>
+        <p className="text-gray-600">Content for {effectivePage} page will be implemented here.</p>
       </div>
     );
   };
@@ -155,17 +190,25 @@ const Profitalyze = () => {
               <h1 className="text-2xl font-bold text-white">Profitalyze</h1>
             </div>
             <div className="hidden md:flex md:space-x-8 items-center">
-              {['home', 'products', 'insights', 'analytics', 'reports'].map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-24 text-center px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
-                    currentPage === page ? 'text-black bg-[#dff24f]' : 'text-white hover:text-black hover:bg-[#dff24f]'
-                  }`}
-                >
-                  {page.charAt(0).toUpperCase() + page.slice(1)}
-                </button>
-              ))}
+              {['home', 'products', 'insights', 'analytics', 'reports'].map((page) => {
+                // Determine if this page is active
+                const urlParams = new URLSearchParams(location.search);
+                const queryPage = urlParams.get('page');
+                const effectivePage = currentPage !== 'home' ? currentPage : queryPage || 'home';
+                const isActive = effectivePage === page;
+
+                return (
+                  <button
+                    key={page}
+                    onClick={() => handleNavigation(page)}
+                    className={`w-24 text-center px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                      isActive ? 'text-black bg-[#dff24f]' : 'text-white hover:text-black hover:bg-[#dff24f]'
+                    }`}
+                  >
+                    {page.charAt(0).toUpperCase() + page.slice(1)}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

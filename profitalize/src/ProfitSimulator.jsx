@@ -1,10 +1,6 @@
-//inge keezhe
-// export default WalmartRetailSimulator;
-import RightPanel from './RightPanel';
-
 import React, { useState, useRef, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ShoppingBag, Smartphone, Laptop, Car, Home, Utensils, Book, Gamepad2, Dumbbell, Plane, Music, Brush, Baby, Flower, Wrench, X, Lightbulb, Plus } from 'lucide-react';
+import { ShoppingBag, Smartphone, Laptop, Car, Home, Utensils, Book, Gamepad2, Dumbbell, Plane, Music, Brush, Baby, Flower, Wrench, X, Plus } from 'lucide-react';
+import RightPanel from './RightPanel';
 
 const DragDropSimulator = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -15,26 +11,16 @@ const DragDropSimulator = () => {
   const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
   const [hoveredBlock, setHoveredBlock] = useState(null);
   const [snapCandidate, setSnapCandidate] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [dealImpactData, setDealImpactData] = useState([]);
+  const [dealImpactLoading, setDealImpactLoading] = useState(true);
+  const [dealImpactError, setDealImpactError] = useState(null);
+  const [predictedProfitMargin, setPredictedProfitMargin] = useState(null);
+  const [predictionLoading, setPredictionLoading] = useState(false);
+  const [predictionError, setPredictionError] = useState(null);
   const stageRef = useRef(null);
-
-  // Categories with icons and products
-  const categories = [
-    { id: 'fashion', name: 'Fashion', icon: ShoppingBag, products: ['Levi Jeans', 'Nike Shoes', 'Adidas Hoodie', 'Ray-Ban Sunglasses', 'Gucci Belt'] },
-    { id: 'electronics', name: 'Electronics', icon: Smartphone, products: ['iPhone 15', 'Samsung Galaxy', 'AirPods Pro', 'iPad Air', 'MacBook Pro'] },
-    { id: 'computers', name: 'Computers', icon: Laptop, products: ['Gaming PC', 'Dell Laptop', 'Mechanical Keyboard', 'Wireless Mouse', 'Monitor 4K'] },
-    { id: 'automotive', name: 'Automotive', icon: Car, products: ['Car Tires', 'Motor Oil', 'GPS Navigator', 'Dash Cam', 'Car Charger'] },
-    { id: 'home', name: 'Home & Garden', icon: Home, products: ['Smart Thermostat', 'Robot Vacuum', 'LED Bulbs', 'Garden Tools', 'Throw Pillows'] },
-    { id: 'food', name: 'Food & Beverage', icon: Utensils, products: ['Protein Powder', 'Organic Tea', 'Gourmet Coffee', 'Energy Bars', 'Vitamins'] },
-    { id: 'books', name: 'Books & Media', icon: Book, products: ['Business Books', 'Kindle Unlimited', 'Audiobooks', 'Notebooks', 'Magazines'] },
-    { id: 'gaming', name: 'Gaming', icon: Gamepad2, products: ['PS5 Console', 'Xbox Controller', 'Gaming Headset', 'VR Headset', 'Steam Deck'] },
-    { id: 'fitness', name: 'Fitness', icon: Dumbbell, products: ['Yoga Mat', 'Dumbbells', 'Protein Shakes', 'Fitness Tracker', 'Resistance Bands'] },
-    { id: 'travel', name: 'Travel', icon: Plane, products: ['Luggage Set', 'Travel Pillow', 'Passport Holder', 'Travel Adapter', 'Packing Cubes'] },
-    { id: 'music', name: 'Music', icon: Music, products: ['Bluetooth Speaker', 'Vinyl Records', 'Guitar Picks', 'Music Streaming', 'Headphones'] },
-    { id: 'art', name: 'Art & Crafts', icon: Brush, products: ['Art Supplies', 'Painting Canvas', 'Colored Pencils', 'Craft Kit', 'Sketchbook'] },
-    { id: 'baby', name: 'Baby & Kids', icon: Baby, products: ['Baby Stroller', 'Diapers', 'Baby Formula', 'Toys', 'Kids Clothes'] },
-    { id: 'beauty', name: 'Beauty', icon: Flower, products: ['Skincare Set', 'Makeup Kit', 'Perfume', 'Hair Care', 'Nail Polish'] },
-    { id: 'tools', name: 'Tools', icon: Wrench, products: ['Drill Set', 'Hammer', 'Screwdriver Kit', 'Toolbox', 'Measuring Tape'] }
-  ];
 
   // Deal blocks
   const deals = [
@@ -42,8 +28,163 @@ const DragDropSimulator = () => {
     { id: 'discount', name: '20% Off', color: 'bg-red-500', boost: 1.2 },
     { id: 'bundle', name: 'Bundle & Save', color: 'bg-blue-500', boost: 1.8 },
     { id: 'shipping', name: 'Free Shipping', color: 'bg-purple-500', boost: 1.1 },
-    { id: 'flash', name: 'Flash Discount', color: 'bg-yellow-500', boost: 1.3 }
+    { id: 'flash', name: 'Flash Discount', color: 'bg-yellow-500', boost: 3.3 },
   ];
+
+  // Deal to discount mapping
+  const getDealDetails = (dealId) => {
+    const dealMap = {
+      'bogo': { discount_type: 'percentage', discount_value: 50.0 },
+      'discount': { discount_type: 'percentage', discount_value: 20.0 },
+      'bundle': { discount_type: 'percentage', discount_value: 25.0 },
+      'shipping': { discount_type: 'fixed_amount', discount_value: 10.0 },
+      'flash': { discount_type: 'percentage', discount_value: 30.0 },
+    };
+    return dealMap[dealId] || { discount_type: 'percentage', discount_value: 0.0 };
+  };
+
+  // Dynamic icon mapping function
+  const getCategoryIcon = (categoryName) => {
+    const lowerCategory = categoryName.toLowerCase();
+    const iconMap = [
+      { keywords: ['fashion', 'clothing', 'apparel', 'shoes'], icon: ShoppingBag },
+      { keywords: ['electronics', 'smartphone', 'tv', 'gadget'], icon: Smartphone },
+      { keywords: ['computers', 'laptop', 'desktop'], icon: Laptop },
+      { keywords: ['automotive', 'car', 'vehicle'], icon: Car },
+      { keywords: ['home', 'garden', 'furniture'], icon: Home },
+      { keywords: ['food', 'beverage', 'utensils'], icon: Utensils },
+      { keywords: ['books', 'media'], icon: Book },
+      { keywords: ['gaming', 'console'], icon: Gamepad2 },
+      { keywords: ['fitness', 'sports', 'exercise'], icon: Dumbbell },
+      { keywords: ['travel', 'plane'], icon: Plane },
+      { keywords: ['music', 'audio'], icon: Music },
+      { keywords: ['art', 'crafts', 'brush'], icon: Brush },
+      { keywords: ['baby', 'kids'], icon: Baby },
+      { keywords: ['beauty', 'makeup'], icon: Flower },
+      { keywords: ['tools', 'hardware'], icon: Wrench },
+    ];
+    return (match => match ? match.icon : ShoppingBag)(
+      iconMap.find(mapping => mapping.keywords.some(keyword => lowerCategory.includes(keyword)))
+    );
+  };
+
+  // Fetch products and deal impact data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setDealImpactLoading(true);
+        const [productsResponse, dealImpactResponse] = await Promise.all([
+          fetch('http://localhost:3000/api/v1/products', { headers: { 'Cache-Control': 'no-cache' } }),
+          fetch('http://localhost:3000/api/v1/profits/deal-impact-analysis', { headers: { 'Cache-Control': 'no-cache' } }),
+        ]);
+
+        if (!productsResponse.ok) throw new Error(`Products HTTP error! Status: ${productsResponse.status}`);
+        if (!dealImpactResponse.ok) throw new Error(`Deal Impact HTTP error! Status: ${dealImpactResponse.status}`);
+
+        const productsData = await productsResponse.json();
+        const dealImpactResult = await dealImpactResponse.json();
+
+        // Process products
+        const groupedProducts = productsData.reduce((acc, product) => {
+          const rootCategory = product.category.root_category_name;
+          if (!acc[rootCategory]) {
+            acc[rootCategory] = {
+              id: rootCategory.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-'),
+              name: rootCategory,
+              icon: getCategoryIcon(rootCategory),
+              products: [],
+            };
+          }
+          acc[rootCategory].products.push(product);
+          return acc;
+        }, {});
+        const categoriesArray = Object.values(groupedProducts);
+        setCategories(categoriesArray);
+        if (categoriesArray.length > 0 && !selectedCategory) {
+          setSelectedCategory(categoriesArray[0].id);
+        }
+
+        // Process deal impact
+        if (dealImpactResult.success) {
+          setDealImpactData(dealImpactResult.data || []);
+        } else {
+          throw new Error(dealImpactResult.message || 'Failed to fetch deal impact data');
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+        setError(err.message);
+        setDealImpactError(err.message);
+        setDealImpactData([]);
+      } finally {
+        setLoading(false);
+        setDealImpactLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Predict profit margin for a deal-product connection
+  const predictProfitMargin = async (productIds, dealId) => {
+    try {
+      setPredictionLoading(true);
+      setPredictionError(null);
+
+      const products = productIds.map(productId => {
+        const productBlock = stageBlocks.find(b => b.id === productId);
+        if (!productBlock) return null;
+        const category = categories.find(c => c.id === productBlock.category);
+        const product = category?.products.find(p => p.product_name === productBlock.name);
+        if (!product) return null;
+        return {
+          product_id: product.product_id,
+          unit_price: parseFloat(product.unit_price),
+          cost_price: parseFloat(product.unit_price) * 0.6, // Mock cost_price
+          quantity: 1,
+          brand: product.brand,
+          category_id: product.category_id,
+          shipping_cost: parseFloat(product.shipping_cost),
+        };
+      }).filter(Boolean);
+
+      if (products.length === 0) {
+        setPredictionError('No valid products found for prediction');
+        setPredictedProfitMargin(null);
+        return;
+      }
+
+      const dealDetails = getDealDetails(dealId);
+      const payload = {
+        products,
+        discount_type: dealDetails.discount_type,
+        discount_value: dealDetails.discount_value,
+      };
+
+      console.log('Predict margin payload:', JSON.stringify(payload, null, 2));
+
+      const response = await fetch('http://localhost:3000/api/v1/predictions/predict-margin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error(`Predict margin HTTP error! Status: ${response.status}`);
+
+      const result = await response.json();
+      console.log('Predict margin response:', result);
+      setPredictedProfitMargin(parseFloat(result.profit_margin));
+    } catch (err) {
+      console.error('Predict margin error:', err);
+      setPredictionError(err.message);
+      setPredictedProfitMargin(null);
+    } finally {
+      setPredictionLoading(false);
+    }
+  };
 
   // Calculate distance between two points
   const calculateDistance = (x1, y1, x2, y2) => {
@@ -93,7 +234,7 @@ const DragDropSimulator = () => {
         name: product.name.length > 8 ? product.name.substring(0, 8) + '...' : product.name,
         profit: Math.floor(baseProfit * boost + (Math.random() * 300 - 150)),
         connections: productConnections.length,
-        boost: boost.toFixed(2)
+        boost: boost.toFixed(2),
       };
     });
   };
@@ -103,12 +244,10 @@ const DragDropSimulator = () => {
     const suggestions = [];
     const productBlocks = stageBlocks.filter(block => block.type === 'product');
     const dealBlocks = stageBlocks.filter(block => block.type === 'deal');
-    const unconnectedProducts = productBlocks.filter(p =>
-      !connections.some(c => c.productId === p.id)
-    );
+    const unconnectedProducts = productBlocks.filter(p => !connections.some(c => c.productId === p.id));
 
     if (productBlocks.length === 0) {
-      suggestions.push("blah blah blah");
+      suggestions.push("Add products to the stage to start simulating profits!");
       return suggestions;
     }
 
@@ -134,8 +273,8 @@ const DragDropSimulator = () => {
       }
     }
 
-    if (connections.length > 3) {
-      suggestions.push("Great job! Your sales flow is optimized. Monitor the profit graph for performance.");
+    if (predictedProfitMargin !== null) {
+      suggestions.push(`Predicted profit margin: ${predictedProfitMargin.toFixed(2)}% - ${predictedProfitMargin > 10 ? 'Good deal!' : 'Consider adjusting the deal.'}`);
     }
 
     return suggestions.slice(0, 3);
@@ -147,21 +286,18 @@ const DragDropSimulator = () => {
     const rect = e.currentTarget.getBoundingClientRect();
     setDragOffset({
       x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      y: e.clientY - rect.top,
     });
   };
 
   // Handle drag over
   const handleDragOver = (e) => {
     e.preventDefault();
-
     if (draggedBlock && stageRef.current) {
       const stageRect = stageRef.current.getBoundingClientRect();
       const x = e.clientX - stageRect.left - dragOffset.x;
       const y = e.clientY - stageRect.top - dragOffset.y;
-
       setDragPosition({ x, y });
-
       const candidate = findSnapCandidate(x, y, draggedBlock.type);
       setSnapCandidate(candidate);
     }
@@ -176,13 +312,11 @@ const DragDropSimulator = () => {
     let x = e.clientX - stageRect.left - dragOffset.x;
     let y = e.clientY - stageRect.top - dragOffset.y;
 
-    if (snapCandidate) {
-      if (draggedBlock.type === 'deal') {
-        const connectedDeals = connections.filter(conn => conn.productId === snapCandidate.id);
-        const dealOffset = connectedDeals.length * 70;
-        x = snapCandidate.x;
-        y = snapCandidate.y + 70 + dealOffset;
-      }
+    if (snapCandidate && draggedBlock.type === 'deal') {
+      const connectedDeals = connections.filter(conn => conn.productId === snapCandidate.id);
+      const dealOffset = connectedDeals.length * 70;
+      x = snapCandidate.x;
+      y = snapCandidate.y + 70 + dealOffset;
     }
 
     const newBlock = {
@@ -190,16 +324,22 @@ const DragDropSimulator = () => {
       id: `${draggedBlock.id}-${Date.now()}`,
       x: Math.max(0, Math.min(x, 600)),
       y: Math.max(0, Math.min(y, 1400)),
-      originalId: draggedBlock.id
+      originalId: draggedBlock.id,
     };
 
     setStageBlocks(prev => [...prev, newBlock]);
 
     if (snapCandidate && draggedBlock.type === 'deal') {
-      setConnections(prev => [...prev, {
-        productId: snapCandidate.id,
-        dealId: newBlock.id
-      }]);
+      setConnections(prev => {
+        const newConnections = [...prev, { productId: snapCandidate.id, dealId: newBlock.id }];
+        console.log('Connections updated:', newConnections);
+        // Trigger ML prediction for the new connection
+        const productIds = newConnections
+          .filter(conn => conn.dealId === newBlock.id)
+          .map(conn => conn.productId);
+        predictProfitMargin(productIds, newBlock.originalId);
+        return newConnections;
+      });
     }
 
     setDraggedBlock(null);
@@ -208,31 +348,46 @@ const DragDropSimulator = () => {
 
   // Remove block from stage
   const removeBlock = (blockId) => {
+    const isDeal = stageBlocks.find(b => b.id === blockId)?.type === 'deal';
     setStageBlocks(prev => prev.filter(block => block.id !== blockId));
-    setConnections(prev => prev.filter(conn =>
-      conn.productId !== blockId && conn.dealId !== blockId
-    ));
+    setConnections(prev => {
+      const newConnections = prev.filter(conn => conn.productId !== blockId && conn.dealId !== blockId);
+      console.log('Connections after removal:', newConnections);
+      if (isDeal) {
+        const affectedProducts = prev.filter(conn => conn.dealId === blockId).map(conn => conn.productId);
+        if (affectedProducts.length > 0) {
+          setPredictedProfitMargin(null); // Reset prediction if deal is removed
+        }
+      }
+      return newConnections;
+    });
   };
 
   // Toggle connection between product and deal
   const toggleConnection = (productId, dealId) => {
     setConnections(prev => {
-      const exists = prev.some(conn =>
-        conn.productId === productId && conn.dealId === dealId
-      );
-
+      const exists = prev.some(conn => conn.productId === productId && conn.dealId === dealId);
       if (exists) {
-        return prev.filter(conn =>
-          !(conn.productId === productId && conn.dealId === dealId)
-        );
+        const newConnections = prev.filter(conn => !(conn.productId === productId && conn.dealId === dealId));
+        console.log('Connection removed:', { productId, dealId }, 'New connections:', newConnections);
+        const productIds = newConnections
+          .filter(conn => conn.dealId === dealId)
+          .map(conn => conn.productId);
+        if (productIds.length > 0) {
+          const dealBlock = stageBlocks.find(b => b.id === dealId);
+          if (dealBlock) {
+            predictProfitMargin(productIds, dealBlock.originalId);
+          }
+        } else {
+          setPredictedProfitMargin(null);
+        }
+        return newConnections;
       } else {
         const product = stageBlocks.find(b => b.id === productId);
         const deal = stageBlocks.find(b => b.id === dealId);
-
         if (product && deal) {
           const connectedDeals = prev.filter(conn => conn.productId === productId);
           const dealOffset = connectedDeals.length * 70;
-
           setStageBlocks(prevBlocks =>
             prevBlocks.map(block =>
               block.id === dealId
@@ -240,31 +395,39 @@ const DragDropSimulator = () => {
                 : block
             )
           );
+          const newConnections = [...prev, { productId, dealId }];
+          console.log('Connection added:', { productId, dealId }, 'New connections:', newConnections);
+          const productIds = newConnections
+            .filter(conn => conn.dealId === dealId)
+            .map(conn => conn.productId);
+          predictProfitMargin(productIds, deal.originalId);
+          return newConnections;
         }
-
-        return [...prev, { productId, dealId }];
+        return prev;
       }
     });
   };
 
   // Render connection lines
   const renderConnections = () => {
+    console.log('Rendering connections:', connections);
     return connections.map((conn, index) => {
       const product = stageBlocks.find(b => b.id === conn.productId);
       const deal = stageBlocks.find(b => b.id === conn.dealId);
-
-      if (!product || !deal) return null;
-
+      if (!product || !deal) {
+        console.log('Skipping connection render: product or deal not found', { productId: conn.productId, dealId: conn.dealId });
+        return null;
+      }
       const startX = product.x + 64;
       const startY = product.y + 64;
       const endX = deal.x + 64;
       const endY = deal.y;
-
+      console.log('Drawing line:', { startX, startY, endX, endY });
       return (
         <svg
           key={index}
           className="absolute pointer-events-none"
-          style={{ left: 0, top: 0, width: '100%', height: '100%' }}
+          style={{ left: 0, top: 0, width: '100%', height: '100%', zIndex: 5 }}
         >
           <line
             x1={startX}
@@ -275,18 +438,8 @@ const DragDropSimulator = () => {
             strokeWidth="2"
             strokeDasharray="5,5"
           />
-          <circle
-            cx={startX}
-            cy={startY}
-            r="3"
-            fill="#3B82F6"
-          />
-          <circle
-            cx={endX}
-            cy={endY}
-            r="3"
-            fill="#3B82F6"
-          />
+          <circle cx={startX} cy={startY} r="3" fill="#3B82F6" />
+          <circle cx={endX} cy={endY} r="3" fill="#3B82F6" />
         </svg>
       );
     });
@@ -295,21 +448,46 @@ const DragDropSimulator = () => {
   const profitData = calculateProfitData();
   const aiSuggestions = generateAISuggestions();
 
+  if (loading || dealImpactLoading) {
+    return <div className="h-screen flex items-center justify-center bg-gray-100">Loading...</div>;
+  }
+
+  if (error || dealImpactError || predictionError) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-gray-100 text-red-600">
+        <p>Error: {error || dealImpactError || predictionError}</p>
+        <button
+          onClick={() => {
+            setError(null);
+            setDealImpactError(null);
+            setPredictionError(null);
+            setLoading(true);
+            setDealImpactLoading(true);
+            Promise.all([
+              fetch('http://localhost:3000/api/v1/products').then(() => setLoading(false)),
+              fetch('http://localhost:3000/api/v1/profits/deal-impact-analysis').then(() => setDealImpactLoading(false)),
+            ]);
+          }}
+          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* Left Panel - Categories */}
       <div className="w-1/10 border-r-2 p-4 overflow-y-auto" style={{ backgroundColor: '#070807' }}>
-        {/* <h2 className="text-xl font-bold mb-4" style={{ color: '#f0f6ec' }}>Categories</h2> */}
-
         <div className="space-y-3">
           {categories.map((category) => {
             const IconComponent = category.icon;
             const isSelected = selectedCategory === category.id;
-
             return (
               <div
                 key={category.id}
-                className={`w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200`}
+                className="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200"
                 onClick={() => setSelectedCategory(isSelected ? null : category.id)}
                 title={category.name}
                 style={{
@@ -335,10 +513,8 @@ const DragDropSimulator = () => {
         </div>
       </div>
 
-
       {/* Products & Deals Panel */}
       <div className="w-1/6 border-r-2 p-4 overflow-y-auto" style={{ backgroundColor: '#dff24f' }}>
-        {/* Product Blocks */}
         {selectedCategory && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-3" style={{ color: '#070807' }}>
@@ -349,27 +525,22 @@ const DragDropSimulator = () => {
                 <div
                   key={`${selectedCategory}-${index}`}
                   className="rounded-lg p-2 cursor-move transition-colors"
-                  style={{
-                    backgroundColor: '#070807',
-                    color: '#ffffff',
-                    border: '2px solid #070807'
-                  }}
+                  style={{ backgroundColor: '#070807', color: '#ffffff', border: '2px solid #070807' }}
                   draggable
                   onDragStart={(e) => handleDragStart(e, {
                     id: `${selectedCategory}-${index}`,
-                    name: product,
+                    name: product.product_name,
                     type: 'product',
-                    category: selectedCategory
+                    category: selectedCategory,
                   })}
                 >
-                  <div className="text-xs font-medium">{product}</div>
+                  <div className="text-xs font-medium">{product.product_name}</div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Deal Blocks */}
         <div>
           <h3 className="text-lg font-semibold mb-3" style={{ color: '#070807' }}>Deals</h3>
           <div className="space-y-2">
@@ -377,17 +548,14 @@ const DragDropSimulator = () => {
               <div
                 key={deal.id}
                 className="rounded-lg p-2 cursor-move hover:opacity-90 transition-opacity"
-                style={{
-                  backgroundColor: '#5fc3ab',
-                  color: '#070807'
-                }}
+                style={{ backgroundColor: '#5fc3ab', color: '#070807' }}
                 draggable
                 onDragStart={(e) => handleDragStart(e, {
                   id: deal.id,
                   name: deal.name,
                   type: 'deal',
                   color: deal.color,
-                  originalId: deal.id
+                  originalId: deal.id,
                 })}
               >
                 <div className="text-xs font-medium">{deal.name}</div>
@@ -396,7 +564,6 @@ const DragDropSimulator = () => {
           </div>
         </div>
       </div>
-
 
       {/* Center Panel - Enhanced Stage */}
       <div className="w-3/5 p-4 overflow-hidden">
@@ -418,25 +585,24 @@ const DragDropSimulator = () => {
             {renderConnections()}
 
             {stageBlocks.map((block) => {
-              const isConnected = connections.some(conn =>
-                conn.productId === block.id || conn.dealId === block.id
-              );
+              const isConnected = connections.some(conn => conn.productId === block.id || conn.dealId === block.id);
               const isHovered = hoveredBlock === block.id;
               const isSnapTarget = snapCandidate?.id === block.id;
 
               return (
                 <div
                   key={block.id}
-                  className={`absolute w-32 h-16 p-2 rounded-lg border-2 transition-all cursor-pointer ${block.type === 'product'
-                      ? `bg-[#ffffff] text-black border-[#070807] ${isConnected ? 'ring-2 ring-[#070807]' : ''
-                      } ${isSnapTarget ? 'ring-4 ring-green-400 shadow-lg' : ''}`
-                      : `bg-[#a3e0d3] text-black border-[#5fc3ab] ${isConnected ? 'ring-2 ring-[#5fc3ab]' : ''
-                      }`
-                    } ${isHovered ? 'scale-105' : ''}`}
+                  className={`absolute w-32 h-16 p-2 rounded-lg border-2 transition-all cursor-pointer ${
+                    block.type === 'product'
+                      ? `bg-[#ffffff] text-black border-[#070807] ${isConnected ? 'ring-2 ring-[#070807]' : ''} ${
+                          isSnapTarget ? 'ring-4 ring-green-400 shadow-lg' : ''
+                        }`
+                      : `bg-[#a3e0d3] text-black border-[#5fc3ab] ${isConnected ? 'ring-2 ring-[#5fc3ab]' : ''}`
+                  } ${isHovered ? 'scale-105' : ''}`}
                   style={{
                     left: `${block.x}px`,
                     top: `${block.y}px`,
-                    zIndex: isSnapTarget ? 50 : (isHovered ? 20 : 10),
+                    zIndex: isSnapTarget ? 50 : isHovered ? 20 : 10,
                   }}
                   onMouseEnter={() => setHoveredBlock(block.id)}
                   onMouseLeave={() => setHoveredBlock(null)}
@@ -444,18 +610,14 @@ const DragDropSimulator = () => {
                     if (block.type === 'product') {
                       const dealBlocks = stageBlocks.filter(b => b.type === 'deal');
                       const unconnectedDeals = dealBlocks.filter(deal =>
-                        !connections.some(conn =>
-                          conn.productId === block.id && conn.dealId === deal.id
-                        )
+                        !connections.some(conn => conn.productId === block.id && conn.dealId === deal.id)
                       );
-
                       if (unconnectedDeals.length > 0) {
                         const closest = unconnectedDeals.reduce((closest, deal) => {
                           const currentDistance = calculateDistance(block.x, block.y, deal.x, deal.y);
                           const closestDistance = calculateDistance(block.x, block.y, closest.x, closest.y);
                           return currentDistance < closestDistance ? deal : closest;
                         });
-
                         if (calculateDistance(block.x, block.y, closest.x, closest.y) < 300) {
                           toggleConnection(block.id, closest.id);
                         }
@@ -492,7 +654,6 @@ const DragDropSimulator = () => {
                             conn.productId === block.id && conn.dealId === deal.id
                           )
                         );
-
                         if (unconnectedDeals.length > 0) {
                           const closest = unconnectedDeals.reduce((closest, deal) => {
                             const currentDistance = calculateDistance(block.x, block.y, deal.x, deal.y);
@@ -508,19 +669,25 @@ const DragDropSimulator = () => {
                     </button>
                   )}
                 </div>
-
               );
             })}
-
           </div>
         </div>
       </div>
-                      <RightPanel
-  stageBlocks={stageBlocks}
-  connections={connections}
-  profitData={profitData}
-  aiSuggestions={aiSuggestions}
-/>
-    </div>);
-}
+
+      {/* Right Panel */}
+      <RightPanel
+        stageBlocks={stageBlocks}
+        connections={connections}
+        profitData={profitData}
+        aiSuggestions={aiSuggestions}
+        dealImpactData={dealImpactData}
+        predictedProfitMargin={predictedProfitMargin}
+        predictionLoading={predictionLoading}
+        predictionError={predictionError}
+      />
+    </div>
+  );
+};
+
 export default DragDropSimulator;

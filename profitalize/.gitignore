@@ -1,4 +1,3 @@
-
 # Logs
 logs
 *.log
@@ -11,14 +10,10 @@ lerna-debug.log*
 .env
 .env.*.local
 
-
-node_modules/
-
 .env
 server/.env.development.local
 server/.env.production.local
 prisma/migrations/
-
 prisma/src/generated/prisma/
 
 node_modules
@@ -38,6 +33,4 @@ dist-ssr
 *.sw?
 
 /src/generated/prisma
-
-src/generated/
 
