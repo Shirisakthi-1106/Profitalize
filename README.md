@@ -1,6 +1,15 @@
 
 # 📊 Profitalyze
 
+
+<div align="center">
+  <p>Made by Team VoidMain - Sana, Shiri Sakthi, Shivani, Shriya</p>
+  <p>
+    <a href="https://youtu.be/wTRw4vTqh9U">🚀 Live Demo</a> 
+  </p>
+</div>
+
+
 <div align="center">
   <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React">
   <img src="https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express.js">
@@ -171,11 +180,3 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
-
-
-<div align="center">
-  <p>Made by Team VoidMain - Sana, Shiri Sakthi, Shivani, Shriya</p>
-  <p>
-    <a href="https://youtu.be/wTRw4vTqh9U">🚀 Live Demo</a> 
-  </p>
-</div>
