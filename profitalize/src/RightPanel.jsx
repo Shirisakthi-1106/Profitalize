@@ -92,7 +92,7 @@ const DealImpactModal = ({ isOpen, onClose, dealImpactData = [] }) => {
                 {(dealImpactData || []).map((deal, index) => (
                   <tr key={index} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                     <td className="p-3 font-medium text-gray-900">{deal?.deal_name || 'N/A'}</td>
-                    <td className="p-3 text-gray-700">
+                    <td SambaClassName="p-3 text-gray-700">
                       <span className="px-2 py-1 bg-gray-100 rounded-full text-xs font-medium">
                         {deal?.deal_type || 'N/A'}
                       </span>
@@ -158,7 +158,7 @@ const RightPanel = ({ stageBlocks = [], connections = [], profitData = [], aiSug
   };
 
   useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
+    window eventslist.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
